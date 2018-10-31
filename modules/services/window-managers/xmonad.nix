@@ -15,12 +15,62 @@ let
       ];
   };
 
+  # A file that exposes nix-generated paths to the compilation.
+  nixVarsHs = pkgs.writeTextFile {
+    name = "Nix.Vars.hs";
+    text = import (cfg.configDir + "/lib/Nix/Vars.hs.nix") (cfg.configData xmonad);
+  };
+
+  anotherXmonad = pkgs.xmonad-with-packages.override {
+    packages = self: [
+      self.xmonad-contrib self.xmonad-extras
+    ];
+  };
+
+  xmonadConfigBuild = pkgs.stdenv.mkDerivation rec {
+    name = "custom-xmonad-config";
+    src = cfg.configDir;
+    #env = pkgs.buildEnv { name = name; path = bul; };
+    buildInputs = [ anotherXmonad ];
+    buildPhase = ''
+      # Copy Nix.Vars
+      ln -s ${nixVarsHs} lib/Nix/Vars.hs
+      echo "XMonad is compiling source..."
+      ln -s ./ .xmonad
+      HOME=$(pwd) xmonad --recompile
+      echo "Compilation successfull!"
+    '';
+    installPhase = ''
+      echo $(ls)
+      echo "Copying generated files to the package"
+      mkdir -p $out/
+      cp xmonad-x86_64-linux $out/
+#      cp xmonad.hs $out/
+#      cp --parents $(find ./ -type f -name "*.hi") $out/
+#      cp --parents $(find ./ -type f -name "*.o") $out/
+    '';
+  };
+
 in
 
 {
   options = {
     xsession.windowManager.xmonad = {
       enable = mkEnableOption "xmonad window manager";
+
+      configDir = mkOption {
+        type = types.nullOr types.path;
+        default = null;
+        description = ''
+          Directory sourced in automatic build
+        '';
+      };
+      configData = mkOption {
+        default = null;
+        description = ''
+          Data handed over to lib/Nix/Vars.hs.nix
+        '';
+      };
 
       haskellPackages = mkOption {
         default = pkgs.haskellPackages;
@@ -82,8 +132,13 @@ in
 
   config = mkIf cfg.enable (mkMerge [
     {
-      home.packages = [ (lowPrio xmonad) ];
+      home.packages = [ (lowPrio xmonad) xmonadConfigBuild ];
       xsession.windowManager.command = "${xmonad}/bin/xmonad";
+
+      home.file.".xmonad" = {
+        source = xmonadConfigBuild;
+        recursive = true;
+      };
     }
 
     (mkIf (cfg.config != null) {
