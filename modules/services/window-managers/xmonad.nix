@@ -43,11 +43,11 @@ let
     installPhase = ''
       echo $(ls)
       echo "Copying generated files to the package"
-      mkdir -p $out/
-      cp xmonad-x86_64-linux $out/
-#      cp xmonad.hs $out/
-#      cp --parents $(find ./ -type f -name "*.hi") $out/
-#      cp --parents $(find ./ -type f -name "*.o") $out/
+      mkdir -p $out/bin $out/src
+      cp xmonad-x86_64-linux $out/bin/
+      cp --parents $(find ./ -type f -name "*.hs") $out/src/
+      mkdir -p $out/src/lib/Nix
+      ln -s ${nixVarsHs} $out/src/lib/Nix/Vars.hs
     '';
   };
 
@@ -132,11 +132,10 @@ in
 
   config = mkIf cfg.enable (mkMerge [
     {
-      home.packages = [ (lowPrio xmonad) xmonadConfigBuild ];
       xsession.windowManager.command = "${xmonad}/bin/xmonad";
 
       home.file.".xmonad" = {
-        source = xmonadConfigBuild;
+        source = "${xmonadConfigBuild}/bin";
         recursive = true;
       };
     }
