@@ -31,6 +31,15 @@ in
     programs.neovim = {
       enable = mkEnableOption "Neovim";
 
+      package = mkOption {
+        type = types.package;
+        default = pkgs.neovim;
+        defaultText = "pkgs.neovim";
+        description = ''
+          Neovim derivation to use
+        '';
+      };
+
       viAlias = mkOption {
         type = types.bool;
         default = false;
@@ -121,7 +130,7 @@ in
 
   config = mkIf cfg.enable {
     home.packages = [
-      (pkgs.neovim.override {
+      (cfg.package.override {
         inherit (cfg)
           extraPython3Packages withPython3
           extraPythonPackages withPython
