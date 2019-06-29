@@ -359,6 +359,7 @@ in
         # Programs that always should be available on the activation
         # script's PATH.
         activationBinPaths = lib.makeBinPath [
+          pkgs.nix
           pkgs.bash
           pkgs.coreutils
           pkgs.diffutils        # For `cmp` and `diff`.
