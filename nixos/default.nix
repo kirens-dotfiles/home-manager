@@ -10,6 +10,10 @@ let
     imports = import ../modules/modules.nix { inherit lib pkgs; };
 
     config = {
+      # Use nixpkgs config from system
+      nixpkgs = { inherit (config.nixpkgs) config overlays system; };
+      _module.args.pkgs = pkgs.lib.mkForce pkgs;
+
       submoduleSupport.enable = true;
       submoduleSupport.externalPackageInstall = cfg.useUserPackages;
 
