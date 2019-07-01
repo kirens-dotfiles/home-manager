@@ -9,10 +9,19 @@ let
   hmModule = types.submodule ({name, ...}: {
     imports = import ../modules/modules.nix { inherit lib pkgs; };
 
+    options = {
+      systemConfig = lib.mkOption {
+        description = "System wide config";
+      };
+    };
+
     config = {
       # Use nixpkgs config from system
       nixpkgs = { inherit (config.nixpkgs) config overlays system; };
       _module.args.pkgs = pkgs.lib.mkForce pkgs;
+
+      # XXX: Bit of a temporary workaroud, should evaluate this later
+      systemConfig = config;
 
       submoduleSupport.enable = true;
       submoduleSupport.externalPackageInstall = cfg.useUserPackages;
